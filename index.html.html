@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>District School Monitoring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#e9eaed; --panel:#ffffff; --panel-2:#f4f5f6; --ink:#23252b; --muted:#676c74;
+  --line:#e1e3e7; --line-strong:#ccd0d6;
+  --brand:#2b2e35; --brand-2:#16171b; --accent:#3e9bcf;
+  --good:#6e7f34; --warn:#3e9bcf; --bad:#a61c33;
+  --good-bg:#ebefdb; --warn-bg:#e2eff8; --bad-bg:#f6e0e4;
+  --chip:#eef0f2; --chip-on:#2b2e35; --shadow:0 1px 2px rgba(20,22,26,.06),0 6px 16px rgba(20,22,26,.07);
+  --chart-text:#41454d; --chart-grid:#e6e8ec;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151619; --panel:#202226; --panel-2:#1a1b1e; --ink:#e6e7ea; --muted:#9aa0a8;
+  --line:#2e3035; --line-strong:#3b3e44;
+  --brand:#2c2f36; --brand-2:#131418; --accent:#5cb0df;
+  --good:#9caf57; --warn:#5cb0df; --bad:#d9506a;
+  --good-bg:#2a311a; --warn-bg:#15303d; --bad-bg:#3a1d22;
+  --chip:#22252b; --chip-on:#3a3e46; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);
+  --chart-text:#a7acb4; --chart-grid:#2b2e34;
+}}
+:root[data-theme="dark"]{
+  --bg:#151619; --panel:#202226; --panel-2:#1a1b1e; --ink:#e6e7ea; --muted:#9aa0a8;
+  --line:#2e3035; --line-strong:#3b3e44;
+  --brand:#2c2f36; --brand-2:#131418; --accent:#5cb0df;
+  --good:#9caf57; --warn:#5cb0df; --bad:#d9506a;
+  --good-bg:#2a311a; --warn-bg:#15303d; --bad-bg:#3a1d22;
+  --chip:#22252b; --chip-on:#3a3e46; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);
+  --chart-text:#a7acb4; --chart-grid:#2b2e34;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:18px 18px 60px}
+.tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+/* header */
+.top{background:linear-gradient(125deg,#12140c 0%,#2b3516 46%,#586a2b 100%);color:#fff;border-radius:16px;
+  padding:20px 22px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;box-shadow:var(--shadow)}
+.top h1{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:26px;margin:0;letter-spacing:.1px}
+.top p{margin:4px 0 0;color:#c3c9d1;font-size:13px;max-width:60ch}
+.top .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#e6eaef;
+  padding:3px 10px;border-radius:999px;font-size:12px;font-weight:500}
+.themebtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;
+  width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:16px;flex:0 0 auto}
+.themebtn:hover{background:rgba(255,255,255,.22)}
+
+/* filter bar */
+.filters{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-top:14px;
+  box-shadow:var(--shadow);display:flex;flex-wrap:wrap;gap:18px 22px;align-items:flex-end}
+.fgroup{display:flex;flex-direction:column;gap:6px}
+.flabel{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.03em}
+select{appearance:none;background:var(--panel-2);border:1px solid var(--line-strong);color:var(--ink);
+  padding:8px 30px 8px 11px;border-radius:9px;font:inherit;font-size:13px;min-width:150px;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235b6b78' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center}
+select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:var(--chip);border:1px solid var(--line-strong);color:var(--ink);padding:7px 12px;border-radius:999px;
+  font-size:12.5px;font-weight:500;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
+.chip[aria-pressed="true"]{background:var(--chip-on);border-color:var(--chip-on);color:#fff}
+.slider-wrap{display:flex;align-items:center;gap:10px;min-width:190px}
+input[type=range]{width:130px;accent-color:var(--accent)}
+.sliderval{font-weight:600;font-size:13px;min-width:34px;text-align:right}
+.reset{margin-left:auto;background:transparent;border:1px solid var(--line-strong);color:var(--muted);
+  padding:8px 14px;border-radius:9px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.reset:hover{color:var(--ink);border-color:var(--ink)}
+
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:14px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:14px 15px;box-shadow:var(--shadow);
+  position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+.kpi.k-warn::before{background:var(--warn)} .kpi.k-bad::before{background:var(--bad)} .kpi.k-good::before{background:var(--good)}
+.kpi .lab{font-size:11.5px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:6px}
+.kpi .val{font-size:26px;font-weight:700;margin-top:6px;letter-spacing:-.5px}
+.kpi .sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* charts */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 2px;font-size:14.5px;font-weight:600}
+.card .hint{margin:0 0 12px;font-size:12px;color:var(--muted)}
+.chartbox{position:relative;height:270px}
+
+/* table */
+.tablecard{margin-top:14px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin-top:6px}
+table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:760px}
+thead th{position:sticky;top:0;background:var(--panel-2);text-align:left;padding:9px 11px;font-weight:600;
+  color:var(--muted);border-bottom:1px solid var(--line-strong);white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--ink)}
+tbody td{padding:8px 11px;border-bottom:1px solid var(--line)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--panel-2)}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+.t-good{background:var(--good-bg);color:var(--good)} .t-warn{background:var(--warn-bg);color:var(--warn)} .t-bad{background:var(--bad-bg);color:var(--bad)}
+.miss{color:var(--bad);font-weight:600}
+.empty{padding:26px;text-align:center;color:var(--muted)}
+
+/* assistant */
+.assistant{margin-top:14px;display:grid;grid-template-columns:1fr;gap:0}
+.asst-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.asst-head .dot{width:9px;height:9px;border-radius:50%;background:var(--good);box-shadow:0 0 0 3px var(--good-bg)}
+.log{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px;height:320px;overflow-y:auto;
+  display:flex;flex-direction:column;gap:12px}
+.msg{max-width:82%;padding:10px 13px;border-radius:13px;font-size:13px;line-height:1.5}
+.msg.user{align-self:flex-end;background:var(--brand);color:#fff;border-bottom-right-radius:4px}
+.msg.bot{align-self:flex-start;background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.bot b{color:var(--ink)}
+.msg code{background:var(--panel-2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:12px}
+.msg .ans-list{margin:8px 0 0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+.msg .ans-list li{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--line);padding-bottom:3px}
+.msg .ans-list li span:last-child{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.suggest{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+.suggest .chip{font-size:12px}
+.askrow{display:flex;gap:8px;margin-top:2px}
+.askrow input{flex:1;background:var(--panel);border:1px solid var(--line-strong);color:var(--ink);
+  padding:11px 13px;border-radius:10px;font:inherit;font-size:13.5px}
+.askbtn{background:var(--brand);color:#fff;border:none;padding:0 20px;border-radius:10px;font:inherit;
+  font-weight:600;font-size:13.5px;cursor:pointer}
+.askbtn:hover{background:var(--accent)}
+.note{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+.section-label{font-size:12px;font-weight:600;color:var(--muted);margin:22px 2px 2px}
+
+@media (max-width:900px){
+  .kpis{grid-template-columns:repeat(3,1fr)}
+  .grid{grid-template-columns:1fr}
+  .top{flex-direction:column}
+}
+@media (max-width:560px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .top h1{font-size:22px}
+  .msg{max-width:92%}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>District School Monitoring</h1>
+      <p>A live view of school health across the district — filter by block, type and condition, then ask the assistant anything about the data.</p>
+      <div class="meta" id="headMeta"></div>
+    </div>
+    <button class="themebtn" id="themeToggle" title="Switch light / dark" aria-label="Switch theme">◐</button>
+  </header>
+
+  <!-- FILTERS -->
+  <section class="filters" aria-label="Filters">
+    <div class="fgroup">
+      <label class="flabel" for="blockSel">Block</label>
+      <select id="blockSel"><option value="__all">All blocks</option></select>
+    </div>
+    <div class="fgroup">
+      <span class="flabel">School type</span>
+      <div class="chips" id="typeChips"></div>
+    </div>
+    <div class="fgroup">
+      <span class="flabel">Infrastructure</span>
+      <div class="chips" id="infraChips"></div>
+    </div>
+    <div class="fgroup">
+      <span class="flabel">Minimum attendance</span>
+      <div class="slider-wrap">
+        <input type="range" id="attSlider" min="0" max="100" value="0" step="1">
+        <span class="sliderval tnum" id="attVal">0%</span>
+      </div>
+    </div>
+    <button class="reset" id="resetBtn">Reset filters</button>
+  </section>
+
+  <!-- KPIs -->
+  <section class="kpis" id="kpis"></section>
+
+  <!-- CHARTS -->
+  <section class="grid">
+    <div class="card">
+      <h3>Attendance &amp; pass rate by block</h3>
+      <p class="hint">Average across schools in each block</p>
+      <div class="chartbox"><canvas id="chBlock"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Infrastructure status</h3>
+      <p class="hint">Share of schools by condition</p>
+      <div class="chartbox"><canvas id="chInfra"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Teacher vacancies by block</h3>
+      <p class="hint">Total unfilled sanctioned posts</p>
+      <div class="chartbox"><canvas id="chVac"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Attendance vs pass rate</h3>
+      <p class="hint">Each dot is a school — coloured by infrastructure</p>
+      <div class="chartbox"><canvas id="chScatter"></canvas></div>
+    </div>
+  </section>
+
+  <!-- TREND -->
+  <section class="card" style="margin-top:14px">
+    <h3>Pass rate across attendance bands</h3>
+    <p class="hint">How the average pass rate moves as attendance rises — schools grouped into 10-point attendance bands. (This file is a single snapshot, so it isn't a month-by-month trend; give me dated data and I'll make it one.)</p>
+    <div class="chartbox"><canvas id="chTrend"></canvas></div>
+  </section>
+
+  <!-- TABLE -->
+  <section class="card tablecard">
+    <h3>Schools needing follow-up <span id="flagCount" class="tag t-bad"></span></h3>
+    <p class="hint">Flagged when any of: attendance &lt;55%, pass &lt;50%, dropout &gt;12%, vacancies ≥4, critical infrastructure, or no toilet. Click a heading to sort.</p>
+    <div class="tablewrap">
+      <table id="flagTable">
+        <thead><tr id="flagHead"></tr></thead>
+        <tbody id="flagBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ASSISTANT -->
+  <section class="card assistant">
+    <div class="asst-head"><span class="dot"></span><h3 style="margin:0">Chat assistant</h3></div>
+    <p class="hint" style="margin-top:2px">Ask anything — about these 100 schools or any other topic. Powered by Claude, with the full dataset loaded in so it can answer questions about the schools.</p>
+    <div class="suggest" id="suggest"></div>
+    <div class="log" id="log"></div>
+    <div class="askrow">
+      <input id="askInput" type="text" placeholder="e.g. Which block has the most teacher vacancies?" autocomplete="off">
+      <button class="askbtn" id="askBtn">Ask</button>
+    </div>
+    <p class="note"><b>For the workshop:</b> this is a live Claude chat with the school data loaded in — ask it about the schools or anything else. The first question asks the viewer's permission to use Claude and runs on their account; if Claude isn't reachable it falls back to a built-in data lookup. It's a language model, so verify any figure before it goes into an official note.</p>
+  </section>
+
+</div>
+
+<script>
+const DATA = [{"School ID": "S001", "School Name": "Govt. High School, Kuchipali", "Block": "Rengali", "School Type": "High", "Enrollment": 547, "Attendance (%)": 50, "Sanctioned Teachers": 12, "Teachers in Position": 3, "Teacher Vacancies": 9, "Pass (%)": 28, "Dropout (%)": 16.9, "Infrastructure Status": "Critical", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S002", "School Name": "Govt. Upper Primary School, Sarandapali", "Block": "Redhakhol", "School Type": "Upper Primary", "Enrollment": 319, "Attendance (%)": 82, "Sanctioned Teachers": 8, "Teachers in Position": 8, "Teacher Vacancies": 0, "Pass (%)": 85, "Dropout (%)": 2.0, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S003", "School Name": "Govt. High School, Torasingha", "Block": "Jujomura", "School Type": "High", "Enrollment": 212, "Attendance (%)": 82, "Sanctioned Teachers": 13, "Teachers in Position": 12, "Teacher Vacancies": 1, "Pass (%)": 91, "Dropout (%)": 4.2, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S004", "School Name": "Govt. High School, Katarbaga", "Block": "Kuchinda", "School Type": "High", "Enrollment": 354, "Attendance (%)": 79, "Sanctioned Teachers": 8, "Teachers in Position": 8, "Teacher Vacancies": 0, "Pass (%)": 89, "Dropout (%)": 1.6, "Infrastructure Status": "Critical", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S005", "School Name": "Govt. High School, Sindurpank", "Block": "Maneswar", "School Type": "High", "Enrollment": 332, "Attendance (%)": 89, "Sanctioned Teachers": 15, "Teachers in Position": 12, "Teacher Vacancies": 3, "Pass (%)": 74, "Dropout (%)": 1.6, "Infrastructure Status": "Adequate", "Toilet Available": "No", "Drinking Water": "No", "Electricity": "No", "Library/Lab": "Yes"}, {"School ID": "S006", "School Name": "Govt. Primary School, Bhainsa", "Block": "Naktideul", "School Type": "Primary", "Enrollment": 59, "Attendance (%)": 79, "Sanctioned Teachers": 4, "Teachers in Position": 3, "Teacher Vacancies": 1, "Pass (%)": 77, "Dropout (%)": 0.9, "Infrastructure Status": "Critical", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S007", "School Name": "Govt. Primary School, Themra", "Block": "Dhankauda", "School Type": "Primary", "Enrollment": 129, "Attendance (%)": 87, "Sanctioned Teachers": 5, "Teachers in Position": 2, "Teacher Vacancies": 3, "Pass (%)": 72, "Dropout (%)": 2.4, "Infrastructure Status": "Needs Attention", "Toilet Available": "No", "Drinking Water": "No", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S008", "School Name": "Govt. Upper Primary School, Sialbahal", "Block": "Kuchinda", "School Type": "Upper Primary", "Enrollment": 261, "Attendance (%)": 84, "Sanctioned Teachers": 6, "Teachers in Position": 6, "Teacher Vacancies": 0, "Pass (%)": 95, "Dropout (%)": 3.7, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S009", "School Name": "Govt. High School, Kuntara", "Block": "Maneswar", "School Type": "High", "Enrollment": 503, "Attendance (%)": 77, "Sanctioned Teachers": 7, "Teachers in Position": 4, "Teacher Vacancies": 3, "Pass (%)": 66, "Dropout (%)": 6.8, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S010", "School Name": "Govt. High School, Chandinipali", "Block": "Redhakhol", "School Type": "High", "Enrollment": 422, "Attendance (%)": 85, "Sanctioned Teachers": 10, "Teachers in Position": 10, "Teacher Vacancies": 0, "Pass (%)": 88, "Dropout (%)": 1.8, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "No", "Library/Lab": "Yes"}, {"School ID": "S011", "School Name": "Govt. Primary School, Samaleipadar", "Block": "Maneswar", "School Type": "Primary", "Enrollment": 96, "Attendance (%)": 73, "Sanctioned Teachers": 4, "Teachers in Position": 3, "Teacher Vacancies": 1, "Pass (%)": 77, "Dropout (%)": 1.8, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S012", "School Name": "Govt. High School, Gambharipali", "Block": "Naktideul", "School Type": "High", "Enrollment": 230, "Attendance (%)": 90, "Sanctioned Teachers": 7, "Teachers in Position": 7, "Teacher Vacancies": 0, "Pass (%)": 96, "Dropout (%)": 6.4, "Infrastructure Status": "Critical", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S013", "School Name": "Govt. Primary School, Charda", "Block": "Jujomura", "School Type": "Primary", "Enrollment": 66, "Attendance (%)": 70, "Sanctioned Teachers": 5, "Teachers in Position": 2, "Teacher Vacancies": 3, "Pass (%)": 86, "Dropout (%)": 2.4, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S014", "School Name": "Govt. Primary School, Ushakothi", "Block": "Naktideul", "School Type": "Primary", "Enrollment": 69, "Attendance (%)": 76, "Sanctioned Teachers": 4, "Teachers in Position": 3, "Teacher Vacancies": 1, "Pass (%)": 65, "Dropout (%)": 4.6, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S015", "School Name": "Govt. Primary School, Bilaikani", "Block": "Rairakhol", "School Type": "Primary", "Enrollment": 52, "Attendance (%)": 75, "Sanctioned Teachers": 2, "Teachers in Position": 1, "Teacher Vacancies": 1, "Pass (%)": 66, "Dropout (%)": 4.7, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "No", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S016", "School Name": "Govt. High School, Budharaja", "Block": "Sambalpur", "School Type": "High", "Enrollment": 221, "Attendance (%)": 40, "Sanctioned Teachers": 13, "Teachers in Position": 1, "Teacher Vacancies": 12, "Pass (%)": 25, "Dropout (%)": 19.8, "Infrastructure Status": "Critical", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "No", "Library/Lab": "No"}, {"School ID": "S017", "School Name": "Govt. Upper Primary School, Lapanga", "Block": "Kuchinda", "School Type": "Upper Primary", "Enrollment": 170, "Attendance (%)": 54, "Sanctioned Teachers": 5, "Teachers in Position": 2, "Teacher Vacancies": 3, "Pass (%)": 18, "Dropout (%)": 19.3, "Infrastructure Status": "Critical", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "No", "Library/Lab": "No"}, {"School ID": "S018", "School Name": "Govt. Primary School, Agalpur", "Block": "Maneswar", "School Type": "Primary", "Enrollment": 92, "Attendance (%)": 75, "Sanctioned Teachers": 4, "Teachers in Position": 2, "Teacher Vacancies": 2, "Pass (%)": 90, "Dropout (%)": 6.3, "Infrastructure Status": "Adequate", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S019", "School Name": "Govt. Upper Primary School, Sikirdi", "Block": "Rairakhol", "School Type": "Upper Primary", "Enrollment": 259, "Attendance (%)": 74, "Sanctioned Teachers": 4, "Teachers in Position": 4, "Teacher Vacancies": 0, "Pass (%)": 78, "Dropout (%)": 1.3, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S020", "School Name": "Govt. High School, Ghens", "Block": "Kuchinda", "School Type": "High", "Enrollment": 430, "Attendance (%)": 71, "Sanctioned Teachers": 11, "Teachers in Position": 8, "Teacher Vacancies": 3, "Pass (%)": 67, "Dropout (%)": 4.9, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S021", "School Name": "Govt. High School, Barpali", "Block": "Naktideul", "School Type": "High", "Enrollment": 541, "Attendance (%)": 87, "Sanctioned Teachers": 13, "Teachers in Position": 11, "Teacher Vacancies": 2, "Pass (%)": 62, "Dropout (%)": 1.3, "Infrastructure Status": "Critical", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S022", "School Name": "Govt. Primary School, Modipara", "Block": "Dhankauda", "School Type": "Primary", "Enrollment": 84, "Attendance (%)": 71, "Sanctioned Teachers": 4, "Teachers in Position": 4, "Teacher Vacancies": 0, "Pass (%)": 84, "Dropout (%)": 2.0, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "No", "Library/Lab": "No"}, {"School ID": "S023", "School Name": "Govt. Primary School, Melchhamunda", "Block": "Dhankauda", "School Type": "Primary", "Enrollment": 155, "Attendance (%)": 48, "Sanctioned Teachers": 7, "Teachers in Position": 3, "Teacher Vacancies": 4, "Pass (%)": 22, "Dropout (%)": 17.3, "Infrastructure Status": "Critical", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S024", "School Name": "Govt. Upper Primary School, Saintala", "Block": "Rengali", "School Type": "Upper Primary", "Enrollment": 130, "Attendance (%)": 82, "Sanctioned Teachers": 4, "Teachers in Position": 4, "Teacher Vacancies": 0, "Pass (%)": 64, "Dropout (%)": 6.5, "Infrastructure Status": "Adequate", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S025", "School Name": "Govt. Primary School, Kadobahal", "Block": "Rengali", "School Type": "Primary", "Enrollment": 129, "Attendance (%)": 82, "Sanctioned Teachers": 3, "Teachers in Position": 3, "Teacher Vacancies": 0, "Pass (%)": 83, "Dropout (%)": 2.5, "Infrastructure Status": "Critical", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S026", "School Name": "Govt. Upper Primary School, Kesaibahal", "Block": "Rairakhol", "School Type": "Upper Primary", "Enrollment": 97, "Attendance (%)": 78, "Sanctioned Teachers": 4, "Teachers in Position": 4, "Teacher Vacancies": 0, "Pass (%)": 73, "Dropout (%)": 4.6, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S027", "School Name": "Govt. Primary School, Dumerpali", "Block": "Rairakhol", "School Type": "Primary", "Enrollment": 94, "Attendance (%)": 78, "Sanctioned Teachers": 3, "Teachers in Position": 3, "Teacher Vacancies": 0, "Pass (%)": 64, "Dropout (%)": 5.5, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "No", "Library/Lab": "No"}, {"School ID": "S028", "School Name": "Govt. Upper Primary School, Padampur", "Block": "Rengali", "School Type": "Upper Primary", "Enrollment": 200, "Attendance (%)": 91, "Sanctioned Teachers": 4, "Teachers in Position": 2, "Teacher Vacancies": 2, "Pass (%)": 83, "Dropout (%)": 4.9, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S029", "School Name": "Govt. High School, Ghenupali", "Block": "Jujomura", "School Type": "High", "Enrollment": 331, "Attendance (%)": 74, "Sanctioned Teachers": 15, "Teachers in Position": 14, "Teacher Vacancies": 1, "Pass (%)": 74, "Dropout (%)": 3.4, "Infrastructure Status": "Needs Attention", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S030", "School Name": "Govt. Upper Primary School, Paikmal", "Block": "Sambalpur", "School Type": "Upper Primary", "Enrollment": 163, "Attendance (%)": 83, "Sanctioned Teachers": 5, "Teachers in Position": 4, "Teacher Vacancies": 1, "Pass (%)": 82, "Dropout (%)": 3.8, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "No", "Library/Lab": "No"}, {"School ID": "S031", "School Name": "Govt. Upper Primary School, Chiplima", "Block": "Maneswar", "School Type": "Upper Primary", "Enrollment": 221, "Attendance (%)": 80, "Sanctioned Teachers": 8, "Teachers in Position": 5, "Teacher Vacancies": 3, "Pass (%)": 67, "Dropout (%)": 6.2, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S032", "School Name": "Govt. High School, Nuapada", "Block": "Naktideul", "School Type": "High", "Enrollment": 615, "Attendance (%)": 84, "Sanctioned Teachers": 8, "Teachers in Position": 7, "Teacher Vacancies": 1, "Pass (%)": 88, "Dropout (%)": 6.7, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S033", "School Name": "Govt. Primary School, Bandhbahal", "Block": "Sambalpur", "School Type": "Primary", "Enrollment": 144, "Attendance (%)": 77, "Sanctioned Teachers": 5, "Teachers in Position": 3, "Teacher Vacancies": 2, "Pass (%)": 73, "Dropout (%)": 6.1, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S034", "School Name": "Govt. High School, Kulundi", "Block": "Naktideul", "School Type": "High", "Enrollment": 451, "Attendance (%)": 89, "Sanctioned Teachers": 15, "Teachers in Position": 14, "Teacher Vacancies": 1, "Pass (%)": 82, "Dropout (%)": 7.2, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S035", "School Name": "Govt. High School, Tikilipara", "Block": "Dhankauda", "School Type": "High", "Enrollment": 423, "Attendance (%)": 78, "Sanctioned Teachers": 14, "Teachers in Position": 14, "Teacher Vacancies": 0, "Pass (%)": 77, "Dropout (%)": 6.4, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S036", "School Name": "Govt. Primary School, Talpali", "Block": "Kuchinda", "School Type": "Primary", "Enrollment": 79, "Attendance (%)": 80, "Sanctioned Teachers": 4, "Teachers in Position": 4, "Teacher Vacancies": 0, "Pass (%)": 96, "Dropout (%)": 1.1, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S037", "School Name": "Govt. Upper Primary School, Muribahal", "Block": "Rairakhol", "School Type": "Upper Primary", "Enrollment": 196, "Attendance (%)": 76, "Sanctioned Teachers": 4, "Teachers in Position": 1, "Teacher Vacancies": 3, "Pass (%)": 88, "Dropout (%)": 3.2, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S038", "School Name": "Govt. Upper Primary School, Zobjharan", "Block": "Sambalpur", "School Type": "Upper Primary", "Enrollment": 166, "Attendance (%)": 50, "Sanctioned Teachers": 7, "Teachers in Position": 2, "Teacher Vacancies": 5, "Pass (%)": 32, "Dropout (%)": 21.0, "Infrastructure Status": "Critical", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "No", "Library/Lab": "Yes"}, {"School ID": "S039", "School Name": "Govt. Upper Primary School, Pujaripali", "Block": "Jujomura", "School Type": "Upper Primary", "Enrollment": 261, "Attendance (%)": 93, "Sanctioned Teachers": 7, "Teachers in Position": 7, "Teacher Vacancies": 0, "Pass (%)": 72, "Dropout (%)": 6.4, "Infrastructure Status": "Critical", "Toilet Available": "Yes", "Drinking Water": "No", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S040", "School Name": "Govt. High School, Sason", "Block": "Maneswar", "School Type": "High", "Enrollment": 399, "Attendance (%)": 84, "Sanctioned Teachers": 9, "Teachers in Position": 8, "Teacher Vacancies": 1, "Pass (%)": 73, "Dropout (%)": 0.9, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "No", "Library/Lab": "Yes"}, {"School ID": "S041", "School Name": "Govt. Upper Primary School, Kholmunda", "Block": "Jujomura", "School Type": "Upper Primary", "Enrollment": 303, "Attendance (%)": 85, "Sanctioned Teachers": 4, "Teachers in Position": 4, "Teacher Vacancies": 0, "Pass (%)": 63, "Dropout (%)": 5.7, "Infrastructure Status": "Critical", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S042", "School Name": "Govt. Primary School, Durgapali", "Block": "Sambalpur", "School Type": "Primary", "Enrollment": 70, "Attendance (%)": 50, "Sanctioned Teachers": 5, "Teachers in Position": 1, "Teacher Vacancies": 4, "Pass (%)": 16, "Dropout (%)": 18.4, "Infrastructure Status": "Critical", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S043", "School Name": "Govt. High School, Bargarh", "Block": "Dhankauda", "School Type": "High", "Enrollment": 490, "Attendance (%)": 75, "Sanctioned Teachers": 8, "Teachers in Position": 8, "Teacher Vacancies": 0, "Pass (%)": 81, "Dropout (%)": 1.3, "Infrastructure Status": "Critical", "Toilet Available": "Yes", "Drinking Water": "No", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S044", "School Name": "Govt. Primary School, Turla", "Block": "Rengali", "School Type": "Primary", "Enrollment": 120, "Attendance (%)": 73, "Sanctioned Teachers": 3, "Teachers in Position": 2, "Teacher Vacancies": 1, "Pass (%)": 81, "Dropout (%)": 6.5, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S045", "School Name": "Govt. Primary School, Larasara", "Block": "Bamra", "School Type": "Primary", "Enrollment": 109, "Attendance (%)": 70, "Sanctioned Teachers": 4, "Teachers in Position": 4, "Teacher Vacancies": 0, "Pass (%)": 88, "Dropout (%)": 6.3, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S046", "School Name": "Govt. High School, Katapali", "Block": "Dhankauda", "School Type": "High", "Enrollment": 447, "Attendance (%)": 89, "Sanctioned Teachers": 11, "Teachers in Position": 10, "Teacher Vacancies": 1, "Pass (%)": 96, "Dropout (%)": 5.9, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "No", "Library/Lab": "No"}, {"School ID": "S047", "School Name": "Govt. Upper Primary School, Batgaon", "Block": "Maneswar", "School Type": "Upper Primary", "Enrollment": 315, "Attendance (%)": 77, "Sanctioned Teachers": 7, "Teachers in Position": 5, "Teacher Vacancies": 2, "Pass (%)": 91, "Dropout (%)": 4.5, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S048", "School Name": "Govt. Upper Primary School, Girisingha", "Block": "Kuchinda", "School Type": "Upper Primary", "Enrollment": 161, "Attendance (%)": 92, "Sanctioned Teachers": 8, "Teachers in Position": 7, "Teacher Vacancies": 1, "Pass (%)": 79, "Dropout (%)": 4.4, "Infrastructure Status": "Critical", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S049", "School Name": "Govt. High School, Hirakud", "Block": "Naktideul", "School Type": "High", "Enrollment": 544, "Attendance (%)": 84, "Sanctioned Teachers": 14, "Teachers in Position": 14, "Teacher Vacancies": 0, "Pass (%)": 63, "Dropout (%)": 1.2, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S050", "School Name": "Govt. Upper Primary School, Kansada", "Block": "Bamra", "School Type": "Upper Primary", "Enrollment": 280, "Attendance (%)": 80, "Sanctioned Teachers": 8, "Teachers in Position": 8, "Teacher Vacancies": 0, "Pass (%)": 84, "Dropout (%)": 5.4, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S051", "School Name": "Govt. Primary School, Melchamunda", "Block": "Dhankauda", "School Type": "Primary", "Enrollment": 72, "Attendance (%)": 78, "Sanctioned Teachers": 5, "Teachers in Position": 5, "Teacher Vacancies": 0, "Pass (%)": 95, "Dropout (%)": 4.7, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S052", "School Name": "Govt. Upper Primary School, Mudipara", "Block": "Dhankauda", "School Type": "Upper Primary", "Enrollment": 101, "Attendance (%)": 87, "Sanctioned Teachers": 4, "Teachers in Position": 4, "Teacher Vacancies": 0, "Pass (%)": 80, "Dropout (%)": 5.4, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S053", "School Name": "Govt. Upper Primary School, Charmal", "Block": "Naktideul", "School Type": "Upper Primary", "Enrollment": 177, "Attendance (%)": 71, "Sanctioned Teachers": 5, "Teachers in Position": 4, "Teacher Vacancies": 1, "Pass (%)": 78, "Dropout (%)": 7.1, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S054", "School Name": "Govt. Primary School, Pandaloi", "Block": "Dhankauda", "School Type": "Primary", "Enrollment": 148, "Attendance (%)": 72, "Sanctioned Teachers": 4, "Teachers in Position": 1, "Teacher Vacancies": 3, "Pass (%)": 77, "Dropout (%)": 1.3, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S055", "School Name": "Govt. Upper Primary School, Bhutapali", "Block": "Naktideul", "School Type": "Upper Primary", "Enrollment": 310, "Attendance (%)": 83, "Sanctioned Teachers": 8, "Teachers in Position": 8, "Teacher Vacancies": 0, "Pass (%)": 81, "Dropout (%)": 4.5, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "No", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S056", "School Name": "Govt. Primary School, Deogaon", "Block": "Maneswar", "School Type": "Primary", "Enrollment": 75, "Attendance (%)": 51, "Sanctioned Teachers": 6, "Teachers in Position": 2, "Teacher Vacancies": 4, "Pass (%)": 27, "Dropout (%)": 19.2, "Infrastructure Status": "Critical", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "No", "Library/Lab": "No"}, {"School ID": "S057", "School Name": "Govt. Primary School, Lakhanpur", "Block": "Naktideul", "School Type": "Primary", "Enrollment": 132, "Attendance (%)": 78, "Sanctioned Teachers": 3, "Teachers in Position": 2, "Teacher Vacancies": 1, "Pass (%)": 74, "Dropout (%)": 3.5, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S058", "School Name": "Govt. High School, Podapali", "Block": "Kuchinda", "School Type": "High", "Enrollment": 563, "Attendance (%)": 79, "Sanctioned Teachers": 16, "Teachers in Position": 14, "Teacher Vacancies": 2, "Pass (%)": 90, "Dropout (%)": 1.4, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S059", "School Name": "Govt. Primary School, Bareipali", "Block": "Redhakhol", "School Type": "Primary", "Enrollment": 158, "Attendance (%)": 93, "Sanctioned Teachers": 5, "Teachers in Position": 5, "Teacher Vacancies": 0, "Pass (%)": 82, "Dropout (%)": 4.7, "Infrastructure Status": "Adequate", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S060", "School Name": "Govt. High School, Tabada", "Block": "Kuchinda", "School Type": "High", "Enrollment": 200, "Attendance (%)": 85, "Sanctioned Teachers": 9, "Teachers in Position": 9, "Teacher Vacancies": 0, "Pass (%)": 95, "Dropout (%)": 5.1, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S061", "School Name": "Govt. Upper Primary School, Jhaduapali", "Block": "Bamra", "School Type": "Upper Primary", "Enrollment": 175, "Attendance (%)": 91, "Sanctioned Teachers": 6, "Teachers in Position": 6, "Teacher Vacancies": 0, "Pass (%)": 68, "Dropout (%)": 6.5, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S062", "School Name": "Govt. Upper Primary School, Godbhaga", "Block": "Sambalpur", "School Type": "Upper Primary", "Enrollment": 112, "Attendance (%)": 78, "Sanctioned Teachers": 6, "Teachers in Position": 3, "Teacher Vacancies": 3, "Pass (%)": 82, "Dropout (%)": 1.3, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "No", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S063", "School Name": "Govt. Primary School, Burla", "Block": "Jujomura", "School Type": "Primary", "Enrollment": 69, "Attendance (%)": 89, "Sanctioned Teachers": 4, "Teachers in Position": 1, "Teacher Vacancies": 3, "Pass (%)": 93, "Dropout (%)": 4.9, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S064", "School Name": "Govt. Primary School, Chherapali", "Block": "Naktideul", "School Type": "Primary", "Enrollment": 48, "Attendance (%)": 48, "Sanctioned Teachers": 5, "Teachers in Position": 1, "Teacher Vacancies": 4, "Pass (%)": 20, "Dropout (%)": 22.0, "Infrastructure Status": "Critical", "Toilet Available": "No", "Drinking Water": "No", "Electricity": "No", "Library/Lab": "Yes"}, {"School ID": "S065", "School Name": "Govt. High School, Talmunda", "Block": "Maneswar", "School Type": "High", "Enrollment": 606, "Attendance (%)": 85, "Sanctioned Teachers": 9, "Teachers in Position": 9, "Teacher Vacancies": 0, "Pass (%)": 80, "Dropout (%)": 4.1, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S066", "School Name": "Govt. High School, Fatakmal", "Block": "Rengali", "School Type": "High", "Enrollment": 440, "Attendance (%)": 72, "Sanctioned Teachers": 9, "Teachers in Position": 6, "Teacher Vacancies": 3, "Pass (%)": 79, "Dropout (%)": 5.9, "Infrastructure Status": "Adequate", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S067", "School Name": "Govt. High School, Kuhundi", "Block": "Kuchinda", "School Type": "High", "Enrollment": 476, "Attendance (%)": 74, "Sanctioned Teachers": 14, "Teachers in Position": 14, "Teacher Vacancies": 0, "Pass (%)": 90, "Dropout (%)": 4.3, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "No", "Library/Lab": "No"}, {"School ID": "S068", "School Name": "Govt. High School, Remta", "Block": "Rengali", "School Type": "High", "Enrollment": 376, "Attendance (%)": 83, "Sanctioned Teachers": 10, "Teachers in Position": 9, "Teacher Vacancies": 1, "Pass (%)": 64, "Dropout (%)": 2.7, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S069", "School Name": "Govt. Upper Primary School, Gudvela", "Block": "Dhankauda", "School Type": "Upper Primary", "Enrollment": 99, "Attendance (%)": 86, "Sanctioned Teachers": 5, "Teachers in Position": 2, "Teacher Vacancies": 3, "Pass (%)": 83, "Dropout (%)": 6.6, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "No", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S070", "School Name": "Govt. Primary School, Ainthapali", "Block": "Dhankauda", "School Type": "Primary", "Enrollment": 105, "Attendance (%)": 80, "Sanctioned Teachers": 4, "Teachers in Position": 1, "Teacher Vacancies": 3, "Pass (%)": 87, "Dropout (%)": 5.0, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "No", "Library/Lab": "No"}, {"School ID": "S071", "School Name": "Govt. High School, Badmal", "Block": "Naktideul", "School Type": "High", "Enrollment": 198, "Attendance (%)": 72, "Sanctioned Teachers": 16, "Teachers in Position": 16, "Teacher Vacancies": 0, "Pass (%)": 77, "Dropout (%)": 4.9, "Infrastructure Status": "Critical", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S072", "School Name": "Govt. Upper Primary School, Deogan", "Block": "Maneswar", "School Type": "Upper Primary", "Enrollment": 132, "Attendance (%)": 70, "Sanctioned Teachers": 6, "Teachers in Position": 6, "Teacher Vacancies": 0, "Pass (%)": 64, "Dropout (%)": 2.8, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S073", "School Name": "Govt. Primary School, Belpahar", "Block": "Dhankauda", "School Type": "Primary", "Enrollment": 67, "Attendance (%)": 89, "Sanctioned Teachers": 2, "Teachers in Position": 2, "Teacher Vacancies": 0, "Pass (%)": 86, "Dropout (%)": 4.8, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S074", "School Name": "Govt. Upper Primary School, Kandhara", "Block": "Sambalpur", "School Type": "Upper Primary", "Enrollment": 320, "Attendance (%)": 91, "Sanctioned Teachers": 6, "Teachers in Position": 5, "Teacher Vacancies": 1, "Pass (%)": 96, "Dropout (%)": 1.6, "Infrastructure Status": "Critical", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "No", "Library/Lab": "No"}, {"School ID": "S075", "School Name": "Govt. Upper Primary School, Garposh", "Block": "Naktideul", "School Type": "Upper Primary", "Enrollment": 140, "Attendance (%)": 85, "Sanctioned Teachers": 7, "Teachers in Position": 6, "Teacher Vacancies": 1, "Pass (%)": 68, "Dropout (%)": 2.2, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S076", "School Name": "Govt. Upper Primary School, Mahulpali", "Block": "Jujomura", "School Type": "Upper Primary", "Enrollment": 92, "Attendance (%)": 91, "Sanctioned Teachers": 8, "Teachers in Position": 6, "Teacher Vacancies": 2, "Pass (%)": 65, "Dropout (%)": 6.9, "Infrastructure Status": "Adequate", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S077", "School Name": "Govt. Primary School, Sakhipali", "Block": "Bamra", "School Type": "Primary", "Enrollment": 126, "Attendance (%)": 89, "Sanctioned Teachers": 3, "Teachers in Position": 1, "Teacher Vacancies": 2, "Pass (%)": 78, "Dropout (%)": 5.2, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S078", "School Name": "Govt. Upper Primary School, Kansar", "Block": "Sambalpur", "School Type": "Upper Primary", "Enrollment": 291, "Attendance (%)": 71, "Sanctioned Teachers": 7, "Teachers in Position": 7, "Teacher Vacancies": 0, "Pass (%)": 85, "Dropout (%)": 5.6, "Infrastructure Status": "Critical", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S079", "School Name": "Govt. High School, Chatabar", "Block": "Bamra", "School Type": "High", "Enrollment": 436, "Attendance (%)": 75, "Sanctioned Teachers": 11, "Teachers in Position": 10, "Teacher Vacancies": 1, "Pass (%)": 78, "Dropout (%)": 6.9, "Infrastructure Status": "Critical", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S080", "School Name": "Govt. Primary School, Basantpur", "Block": "Maneswar", "School Type": "Primary", "Enrollment": 141, "Attendance (%)": 91, "Sanctioned Teachers": 3, "Teachers in Position": 1, "Teacher Vacancies": 2, "Pass (%)": 87, "Dropout (%)": 7.3, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S081", "School Name": "Govt. High School, Dengabahal", "Block": "Bamra", "School Type": "High", "Enrollment": 563, "Attendance (%)": 88, "Sanctioned Teachers": 11, "Teachers in Position": 11, "Teacher Vacancies": 0, "Pass (%)": 86, "Dropout (%)": 6.3, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "No", "Library/Lab": "Yes"}, {"School ID": "S082", "School Name": "Govt. Primary School, Bijepur", "Block": "Redhakhol", "School Type": "Primary", "Enrollment": 127, "Attendance (%)": 90, "Sanctioned Teachers": 2, "Teachers in Position": 2, "Teacher Vacancies": 0, "Pass (%)": 91, "Dropout (%)": 6.9, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S083", "School Name": "Govt. Primary School, Attabira", "Block": "Maneswar", "School Type": "Primary", "Enrollment": 75, "Attendance (%)": 82, "Sanctioned Teachers": 3, "Teachers in Position": 1, "Teacher Vacancies": 2, "Pass (%)": 91, "Dropout (%)": 3.1, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S084", "School Name": "Govt. Upper Primary School, Bausen", "Block": "Maneswar", "School Type": "Upper Primary", "Enrollment": 247, "Attendance (%)": 78, "Sanctioned Teachers": 7, "Teachers in Position": 7, "Teacher Vacancies": 0, "Pass (%)": 64, "Dropout (%)": 5.3, "Infrastructure Status": "Adequate", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S085", "School Name": "Govt. High School, Titlagarh", "Block": "Rairakhol", "School Type": "High", "Enrollment": 363, "Attendance (%)": 82, "Sanctioned Teachers": 7, "Teachers in Position": 7, "Teacher Vacancies": 0, "Pass (%)": 79, "Dropout (%)": 1.8, "Infrastructure Status": "Critical", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S086", "School Name": "Govt. Primary School, Kisinda", "Block": "Sambalpur", "School Type": "Primary", "Enrollment": 145, "Attendance (%)": 77, "Sanctioned Teachers": 4, "Teachers in Position": 4, "Teacher Vacancies": 0, "Pass (%)": 70, "Dropout (%)": 6.0, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S087", "School Name": "Govt. Primary School, Ledingi", "Block": "Bamra", "School Type": "Primary", "Enrollment": 145, "Attendance (%)": 78, "Sanctioned Teachers": 2, "Teachers in Position": 1, "Teacher Vacancies": 1, "Pass (%)": 71, "Dropout (%)": 7.4, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S088", "School Name": "Govt. High School, Kabripara", "Block": "Rengali", "School Type": "High", "Enrollment": 345, "Attendance (%)": 75, "Sanctioned Teachers": 7, "Teachers in Position": 5, "Teacher Vacancies": 2, "Pass (%)": 78, "Dropout (%)": 0.9, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S089", "School Name": "Govt. Primary School, Dhama", "Block": "Redhakhol", "School Type": "Primary", "Enrollment": 102, "Attendance (%)": 89, "Sanctioned Teachers": 3, "Teachers in Position": 1, "Teacher Vacancies": 2, "Pass (%)": 64, "Dropout (%)": 5.6, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S090", "School Name": "Govt. Upper Primary School, Loisingha", "Block": "Jujomura", "School Type": "Upper Primary", "Enrollment": 265, "Attendance (%)": 85, "Sanctioned Teachers": 4, "Teachers in Position": 4, "Teacher Vacancies": 0, "Pass (%)": 90, "Dropout (%)": 1.0, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S091", "School Name": "Govt. Upper Primary School, Salebhata", "Block": "Bamra", "School Type": "Upper Primary", "Enrollment": 242, "Attendance (%)": 79, "Sanctioned Teachers": 8, "Teachers in Position": 7, "Teacher Vacancies": 1, "Pass (%)": 91, "Dropout (%)": 4.0, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S092", "School Name": "Govt. Upper Primary School, Naupada", "Block": "Rengali", "School Type": "Upper Primary", "Enrollment": 205, "Attendance (%)": 83, "Sanctioned Teachers": 5, "Teachers in Position": 4, "Teacher Vacancies": 1, "Pass (%)": 83, "Dropout (%)": 6.3, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S093", "School Name": "Govt. High School, Gochhara", "Block": "Dhankauda", "School Type": "High", "Enrollment": 422, "Attendance (%)": 72, "Sanctioned Teachers": 8, "Teachers in Position": 8, "Teacher Vacancies": 0, "Pass (%)": 67, "Dropout (%)": 1.2, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S094", "School Name": "Govt. Upper Primary School, Bheden", "Block": "Rairakhol", "School Type": "Upper Primary", "Enrollment": 261, "Attendance (%)": 83, "Sanctioned Teachers": 4, "Teachers in Position": 1, "Teacher Vacancies": 3, "Pass (%)": 84, "Dropout (%)": 6.6, "Infrastructure Status": "Adequate", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S095", "School Name": "Govt. High School, Sohela", "Block": "Maneswar", "School Type": "High", "Enrollment": 439, "Attendance (%)": 74, "Sanctioned Teachers": 10, "Teachers in Position": 10, "Teacher Vacancies": 0, "Pass (%)": 92, "Dropout (%)": 2.1, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S096", "School Name": "Govt. High School, Goenkpali", "Block": "Jujomura", "School Type": "High", "Enrollment": 572, "Attendance (%)": 49, "Sanctioned Teachers": 16, "Teachers in Position": 12, "Teacher Vacancies": 4, "Pass (%)": 17, "Dropout (%)": 18.4, "Infrastructure Status": "Critical", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S097", "School Name": "Govt. Upper Primary School, Roth", "Block": "Bamra", "School Type": "Upper Primary", "Enrollment": 91, "Attendance (%)": 74, "Sanctioned Teachers": 5, "Teachers in Position": 3, "Teacher Vacancies": 2, "Pass (%)": 87, "Dropout (%)": 1.0, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S098", "School Name": "Govt. Primary School, Jhankarbahal", "Block": "Bamra", "School Type": "Primary", "Enrollment": 92, "Attendance (%)": 93, "Sanctioned Teachers": 4, "Teachers in Position": 3, "Teacher Vacancies": 1, "Pass (%)": 82, "Dropout (%)": 5.9, "Infrastructure Status": "Needs Attention", "Toilet Available": "No", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "Yes"}, {"School ID": "S099", "School Name": "Govt. Upper Primary School, Talab", "Block": "Maneswar", "School Type": "Upper Primary", "Enrollment": 203, "Attendance (%)": 85, "Sanctioned Teachers": 7, "Teachers in Position": 7, "Teacher Vacancies": 0, "Pass (%)": 90, "Dropout (%)": 3.4, "Infrastructure Status": "Needs Attention", "Toilet Available": "Yes", "Drinking Water": "Yes", "Electricity": "Yes", "Library/Lab": "No"}, {"School ID": "S100", "School Name": "Govt. High School, Amalapali", "Block": "Naktideul", "School Type": "High", "Enrollment": 521, "Attendance (%)": 71, "Sanctioned Teachers": 11, "Teachers in Position": 10, "Teacher Vacancies": 1, "Pass (%)": 76, "Dropout (%)": 3.3, "Infrastructure Status": "Adequate", "Toilet Available": "Yes", "Drinking Water": "No", "Electricity": "Yes", "Library/Lab": "No"}];
+
+/* ---------- field keys ---------- */
+const F = {id:"School ID",name:"School Name",block:"Block",type:"School Type",enroll:"Enrollment",
+  att:"Attendance (%)",sanc:"Sanctioned Teachers",inpos:"Teachers in Position",vac:"Teacher Vacancies",
+  pass:"Pass (%)",drop:"Dropout (%)",infra:"Infrastructure Status",toilet:"Toilet Available",
+  water:"Drinking Water",elec:"Electricity",lib:"Library/Lab"};
+
+const BLOCKS = [...new Set(DATA.map(d=>d[F.block]))].sort();
+const TYPES  = ["Primary","Upper Primary","High"];
+const INFRA  = ["Adequate","Needs Attention","Critical"];
+
+/* ---------- filter state ---------- */
+const state = {block:"__all", type:"__all", infra:"__all", minAtt:0};
+
+function filtered(){
+  return DATA.filter(d=>
+    (state.block==="__all"||d[F.block]===state.block) &&
+    (state.type==="__all"||d[F.type]===state.type) &&
+    (state.infra==="__all"||d[F.infra]===state.infra) &&
+    d[F.att] >= state.minAtt );
+}
+function needsAttention(d){
+  return d[F.att]<55 || d[F.pass]<50 || d[F.drop]>12 || d[F.vac]>=4 ||
+         d[F.infra]==="Critical" || d[F.toilet]==="No";
+}
+const avg = (a)=> a.length? a.reduce((x,y)=>x+y,0)/a.length : 0;
+const r1 = (x)=> Math.round(x*10)/10;
+
+/* ---------- build filter UI ---------- */
+const blockSel = document.getElementById("blockSel");
+BLOCKS.forEach(b=>{const o=document.createElement("option");o.value=b;o.textContent=b;blockSel.appendChild(o);});
+blockSel.onchange = ()=>{state.block=blockSel.value; render();};
+
+function buildSegmented(containerId, values, key){
+  const c = document.getElementById(containerId);
+  ["__all",...values].forEach(v=>{
+    const b=document.createElement("button");
+    b.className="chip"; b.textContent = v==="__all" ? "All" : v;
+    b.dataset.val=v;
+    b.setAttribute("aria-pressed", state[key]===v);
+    b.onclick=()=>{
+      state[key]=v;
+      c.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed", x.dataset.val===v));
+      render();
+    };
+    c.appendChild(b);
+  });
+}
+buildSegmented("typeChips", TYPES, "type");
+buildSegmented("infraChips", INFRA, "infra");
+
+const attSlider=document.getElementById("attSlider"), attVal=document.getElementById("attVal");
+attSlider.oninput=()=>{state.minAtt=+attSlider.value; attVal.textContent=attSlider.value+"%"; render();};
+
+document.getElementById("resetBtn").onclick=()=>{
+  state.block="__all"; blockSel.value="__all";
+  state.type="__all"; state.infra="__all"; state.minAtt=0;
+  attSlider.value=0; attVal.textContent="0%";
+  document.querySelectorAll("#typeChips .chip,#infraChips .chip").forEach(c=>c.setAttribute("aria-pressed", c.dataset.val==="__all"));
+  render();
+};
+
+document.getElementById("headMeta").innerHTML =
+  `<span class="pill">${DATA.length} schools</span><span class="pill">${BLOCKS.length} blocks</span><span class="pill">Sample data</span>`;
+
+/* ---------- KPIs ---------- */
+function renderKpis(rows){
+  const flagged = rows.filter(needsAttention).length;
+  const cards=[
+    {lab:"🏫 Schools", val:rows.length, sub:"in current view", cls:""},
+    {lab:"👨‍🎓 Students", val:rows.reduce((s,d)=>s+d[F.enroll],0).toLocaleString(), sub:"total enrolled", cls:""},
+    {lab:"📊 Avg attendance", val:r1(avg(rows.map(d=>d[F.att])))+"%", sub:"across schools", cls:"k-good"},
+    {lab:"📈 Avg pass", val:r1(avg(rows.map(d=>d[F.pass])))+"%", sub:"annual exams", cls:"k-good"},
+    {lab:"👩‍🏫 Vacancies", val:rows.reduce((s,d)=>s+d[F.vac],0), sub:"unfilled posts", cls:"k-bad"},
+    {lab:"⚠️ Follow-up", val:flagged, sub:"schools flagged", cls:"k-bad"},
+  ];
+  document.getElementById("kpis").innerHTML = cards.map(c=>
+    `<div class="kpi ${c.cls}"><div class="lab">${c.lab}</div><div class="val tnum">${c.val}</div><div class="sub">${c.sub}</div></div>`).join("");
+}
+
+/* ---------- charts ---------- */
+let charts={};
+function cssv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function hexA(h,a){h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;}
+function palette(){return{
+  text:cssv("--chart-text"), grid:cssv("--chart-grid"),
+  good:cssv("--good"), warn:cssv("--warn"), bad:cssv("--bad"),
+  brand:cssv("--brand"), accent:cssv("--accent")};}
+
+function buildCharts(rows){
+  Object.values(charts).forEach(c=>c&&c.destroy());
+  const p=palette();
+  Chart.defaults.font.family="Inter, sans-serif";
+  Chart.defaults.color=p.text;
+  const blocksIn=[...new Set(rows.map(d=>d[F.block]))].sort();
+
+  // block attendance & pass
+  charts.block=new Chart(document.getElementById("chBlock"),{
+    type:"bar",
+    data:{labels:blocksIn,datasets:[
+      {label:"Attendance %",data:blocksIn.map(b=>r1(avg(rows.filter(d=>d[F.block]===b).map(d=>d[F.att])))),backgroundColor:p.accent,borderRadius:4},
+      {label:"Pass %",data:blocksIn.map(b=>r1(avg(rows.filter(d=>d[F.block]===b).map(d=>d[F.pass])))),backgroundColor:p.good,borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{
+      x:{grid:{display:false},ticks:{maxRotation:60,minRotation:30}},
+      y:{beginAtZero:true,max:100,grid:{color:p.grid}}},
+      plugins:{legend:{position:"bottom",labels:{boxWidth:12,padding:14}}}}
+  });
+
+  // infrastructure doughnut
+  const infraCounts=INFRA.map(s=>rows.filter(d=>d[F.infra]===s).length);
+  charts.infra=new Chart(document.getElementById("chInfra"),{
+    type:"doughnut",
+    data:{labels:INFRA,datasets:[{data:infraCounts,backgroundColor:[p.good,p.warn,p.bad],borderWidth:2,borderColor:cssv("--panel")}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"58%",
+      plugins:{legend:{position:"bottom",labels:{boxWidth:12,padding:14}}}}
+  });
+
+  // vacancies by block
+  const vacByBlock=blocksIn.map(b=>rows.filter(d=>d[F.block]===b).reduce((s,d)=>s+d[F.vac],0));
+  charts.vac=new Chart(document.getElementById("chVac"),{
+    type:"bar",
+    data:{labels:blocksIn,datasets:[{label:"Vacancies",data:vacByBlock,backgroundColor:p.bad,borderRadius:4}]},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,
+      scales:{x:{beginAtZero:true,grid:{color:p.grid}},y:{grid:{display:false}}},
+      plugins:{legend:{display:false}}}
+  });
+
+  // trend: avg pass rate by attendance band
+  const bands=[[40,50,"40–49"],[50,60,"50–59"],[60,70,"60–69"],[70,80,"70–79"],[80,90,"80–89"],[90,101,"90–100"]];
+  const tLabels=[], tData=[];
+  bands.forEach(([lo,hi,lab])=>{
+    const r=rows.filter(d=>d[F.att]>=lo && d[F.att]<hi);
+    tLabels.push(lab); tData.push(r.length? r1(avg(r.map(d=>d[F.pass]))) : null);
+  });
+  charts.trend=new Chart(document.getElementById("chTrend"),{
+    type:"line",
+    data:{labels:tLabels,datasets:[{label:"Avg pass %",data:tData,
+      borderColor:p.accent,backgroundColor:hexA(p.accent,.14),fill:true,tension:.35,spanGaps:true,
+      pointRadius:4,pointHoverRadius:6,pointBackgroundColor:p.accent,pointBorderColor:cssv("--panel"),pointBorderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{title:{display:true,text:"Attendance band (%)"},grid:{display:false}},
+              y:{beginAtZero:true,max:100,title:{display:true,text:"Average pass %"},grid:{color:p.grid}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw==null?"no schools in band":`avg pass ${c.raw}%`}}}}
+  });
+
+  // scatter att vs pass
+  const colorFor=d=>d[F.infra]==="Critical"?p.bad:d[F.infra]==="Needs Attention"?p.warn:p.good;
+  charts.scatter=new Chart(document.getElementById("chScatter"),{
+    type:"scatter",
+    data:{datasets:[{
+      data:rows.map(d=>({x:d[F.att],y:d[F.pass],n:d[F.name],b:d[F.block]})),
+      pointBackgroundColor:rows.map(colorFor),pointRadius:4,pointHoverRadius:6,
+      pointBorderColor:cssv("--panel"),pointBorderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{title:{display:true,text:"Attendance %"},min:30,max:100,grid:{color:p.grid}},
+              y:{title:{display:true,text:"Pass %"},min:0,max:100,grid:{color:p.grid}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.n} — att ${c.raw.x}%, pass ${c.raw.y}%`}}}}
+  });
+}
+
+/* ---------- follow-up table ---------- */
+const COLS=[
+  {k:F.name,t:"School"},{k:F.block,t:"Block"},{k:F.type,t:"Type"},
+  {k:F.att,t:"Att %",num:1},{k:F.pass,t:"Pass %",num:1},{k:F.drop,t:"Dropout %",num:1},
+  {k:F.vac,t:"Vac.",num:1},{k:F.infra,t:"Infra"},{k:"flags",t:"Missing"}
+];
+let sortKey=F.att, sortAsc=true;
+function infraTag(s){const c=s==="Adequate"?"t-good":s==="Needs Attention"?"t-warn":"t-bad";return `<span class="tag ${c}">${s}</span>`;}
+function renderTable(rows){
+  const head=document.getElementById("flagHead");
+  head.innerHTML=COLS.map(c=>`<th data-k="${c.k}">${c.t}${sortKey===c.k?(sortAsc?" ▲":" ▼"):""}</th>`).join("");
+  head.querySelectorAll("th").forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k; if(k==="flags")return;
+    if(sortKey===k)sortAsc=!sortAsc; else{sortKey=k;sortAsc=true;} render();
+  });
+  let flagged=rows.filter(needsAttention);
+  flagged.sort((a,b)=>{let x=a[sortKey],y=b[sortKey];
+    if(typeof x==="string"){x=x.toLowerCase();y=y.toLowerCase();return sortAsc?(x<y?-1:x>y?1:0):(x>y?-1:x<y?1:0);}
+    return sortAsc?x-y:y-x;});
+  document.getElementById("flagCount").textContent=flagged.length+" flagged";
+  const body=document.getElementById("flagBody");
+  if(!flagged.length){body.innerHTML=`<tr><td colspan="${COLS.length}" class="empty">No schools in this view meet the follow-up criteria.</td></tr>`;return;}
+  body.innerHTML=flagged.map(d=>{
+    const miss=[];if(d[F.toilet]==="No")miss.push("toilet");if(d[F.water]==="No")miss.push("water");
+    if(d[F.elec]==="No")miss.push("power");if(d[F.lib]==="No")miss.push("lib");
+    return `<tr>
+      <td>${d[F.name]}</td><td>${d[F.block]}</td><td>${d[F.type]}</td>
+      <td class="tnum ${d[F.att]<55?'miss':''}">${d[F.att]}</td>
+      <td class="tnum ${d[F.pass]<50?'miss':''}">${d[F.pass]}</td>
+      <td class="tnum ${d[F.drop]>12?'miss':''}">${d[F.drop]}</td>
+      <td class="tnum ${d[F.vac]>=4?'miss':''}">${d[F.vac]}</td>
+      <td>${infraTag(d[F.infra])}</td>
+      <td>${miss.length?'<span class="miss">'+miss.join(", ")+'</span>':'—'}</td>
+    </tr>`;}).join("");
+}
+
+/* ---------- master render ---------- */
+function render(){
+  const rows=filtered();
+  renderKpis(rows);
+  buildCharts(rows);
+  renderTable(rows);
+}
+
+/* ==================================================================
+   ASSISTANT — local natural-language question answering over DATA
+   ================================================================== */
+const METRICS={
+  att:{keys:["attendance","present","attend"],field:F.att,label:"attendance",unit:"%"},
+  pass:{keys:["pass","result","exam"],field:F.pass,label:"pass rate",unit:"%"},
+  drop:{keys:["dropout","drop out","drop-out","leaving"],field:F.drop,label:"dropout",unit:"%"},
+  enroll:{keys:["enrol","student","strength"],field:F.enroll,label:"enrollment",unit:""},
+  vac:{keys:["vacanc","vacant","shortage","unfilled"],field:F.vac,label:"teacher vacancies",unit:""},
+  teachers:{keys:["teacher in position","teachers in position","staff strength"],field:F.inpos,label:"teachers in position",unit:""}
+};
+const CONDS=[
+  {keys:["no toilet","without toilet","lack toilet","toilet"],test:d=>d[F.toilet]==="No",label:"no toilet"},
+  {keys:["no water","without water","no drinking water","drinking water"],test:d=>d[F.water]==="No",label:"no drinking water"},
+  {keys:["no electricity","without electricity","no power","electricity"],test:d=>d[F.elec]==="No",label:"no electricity"},
+  {keys:["no library","no lab","without lab","library","lab"],test:d=>d[F.lib]==="No",label:"no library/lab"},
+  {keys:["critical"],test:d=>d[F.infra]==="Critical",label:"critical infrastructure"},
+  {keys:["needs attention","need attention"],test:d=>d[F.infra]==="Needs Attention",label:"needs-attention infrastructure"},
+  {keys:["adequate"],test:d=>d[F.infra]==="Adequate",label:"adequate infrastructure"}
+];
+function findBlock(q){return BLOCKS.find(b=>q.includes(b.toLowerCase()));}
+function findMetric(q){for(const k in METRICS){if(METRICS[k].keys.some(w=>q.includes(w)))return METRICS[k];}return null;}
+function fmt(v,unit){return (Math.round(v*10)/10)+ (unit||"");}
+function listItems(arr,valFn){
+  return `<ul class="ans-list">${arr.map(d=>`<li><span>${d[F.name]} · ${d[F.block]}</span><span>${valFn(d)}</span></li>`).join("")}</ul>`;
+}
+function scope(q){ // returns {rows, blockName}
+  const b=findBlock(q);
+  return b? {rows:DATA.filter(d=>d[F.block]===b), blockName:b} : {rows:DATA, blockName:null};
+}
+
+function answer(q0){
+  const q=q0.toLowerCase().trim();
+  if(!q) return "Ask me something about the schools — try one of the suggestions above.";
+
+  // specific school by ID
+  const idm=q.match(/\bs\s?0*([0-9]{1,3})\b/);
+  if(idm){
+    const id="S"+String(idm[1]).padStart(3,"0");
+    const d=DATA.find(x=>x[F.id]===id);
+    if(d) return schoolProfile(d);
+  }
+  // specific school by name fragment ("tell me about ... <village>")
+  if(/tell me about|profile of|details of|info on|about the school/.test(q)){
+    const hit=DATA.find(d=>{const v=d[F.name].split(",")[1]; return v && q.includes(v.trim().toLowerCase());});
+    if(hit) return schoolProfile(hit);
+  }
+
+  const metric=findMetric(q);
+  const {rows,blockName}=scope(q);
+  const where = blockName? ` in ${blockName}` : "";
+  const cond=CONDS.find(c=>c.keys.some(w=>q.includes(w)));
+
+  // needs attention / follow-up / concerning
+  if(/attention|follow.?up|concern|worry|struggl|worst school|risk|problem|priority/.test(q) && !metric){
+    const fl=rows.filter(needsAttention).sort((a,b)=>(a[F.att]+a[F.pass])-(b[F.att]+b[F.pass]));
+    if(!fl.length) return `No schools${where} currently meet the follow-up criteria.`;
+    const top=fl.slice(0,8);
+    return `<b>${fl.length} school${fl.length>1?"s":""}${where} need follow-up.</b> The most urgent (lowest attendance + pass):`
+      + listItems(top,d=>`att ${d[F.att]}% · pass ${d[F.pass]}%`)
+      + (fl.length>8?`<div style="margin-top:6px;color:var(--muted)">…and ${fl.length-8} more.</div>`:"");
+  }
+
+  // "by block" breakdown
+  if(/by block|per block|each block|across block|block wise|block-wise/.test(q) && metric){
+    const rank=BLOCKS.map(b=>{const r=DATA.filter(d=>d[F.block]===b);
+      const v=(metric===METRICS.vac||metric===METRICS.enroll)?r.reduce((s,d)=>s+d[metric.field],0):r1(avg(r.map(d=>d[metric.field])));
+      return {b,v};}).sort((a,b)=>b.v-a.v);
+    return `<b>${cap(metric.label)} by block:</b>`+
+      `<ul class="ans-list">${rank.map(x=>`<li><span>${x.b}</span><span>${fmt(x.v,metric.unit)}</span></li>`).join("")}</ul>`;
+  }
+
+  // which block has most/least metric
+  if(/which block|what block|highest block|block has/.test(q) && metric){
+    const agg=BLOCKS.map(b=>{const r=DATA.filter(d=>d[F.block]===b);
+      const v=(metric===METRICS.vac||metric===METRICS.enroll)?r.reduce((s,d)=>s+d[metric.field],0):r1(avg(r.map(d=>d[metric.field])));
+      return {b,v};});
+    const least=/lowest|least|worst|fewest|minimum|min\b/.test(q);
+    agg.sort((a,b)=>least?a.v-b.v:b.v-a.v);
+    const w=agg[0];
+    return `<b>${w.b}</b> has the ${least?"lowest":"highest"} ${metric.label} — ${fmt(w.v,metric.unit)}.`;
+  }
+
+  // superlative school: highest/lowest metric
+  if(metric && /highest|lowest|most|least|top|bottom|worst|best|maximum|minimum|max\b|min\b/.test(q)){
+    const least=/lowest|least|worst|bottom|fewest|minimum|min\b/.test(q) && !/best/.test(q);
+    let pool=[...rows].sort((a,b)=>least?a[metric.field]-b[metric.field]:b[metric.field]-a[metric.field]);
+    const nm=q.match(/top\s+(\d+)|bottom\s+(\d+)|(\d+)\s+schools?/);
+    const nn=nm?(+(nm[1]||nm[2]||nm[3])):1;
+    if(nn>1){const top=pool.slice(0,Math.min(nn,15));
+      return `<b>${least?"Lowest":"Highest"} ${nn} by ${metric.label}${where}:</b>`+listItems(top,d=>fmt(d[metric.field],metric.unit));}
+    const d=pool[0];
+    return `<b>${d[F.name]}</b> (${d[F.block]}) has the ${least?"lowest":"highest"} ${metric.label}${where} at ${fmt(d[metric.field],metric.unit)}.`;
+  }
+
+  // count questions
+  if(/how many|number of|count|how much/.test(q)){
+    if(cond){const r=rows.filter(cond.test);
+      return `<b>${r.length}</b> school${r.length!==1?"s":""}${where} have ${cond.label}.`;}
+    // threshold count
+    const thr=parseThreshold(q);
+    if(metric && thr){const r=rows.filter(d=>thr.op==="gt"?d[metric.field]>thr.n:d[metric.field]<thr.n);
+      return `<b>${r.length}</b> school${r.length!==1?"s":""}${where} have ${metric.label} ${thr.op==="gt"?"above":"below"} ${thr.n}${metric.unit}.`;}
+    if(metric===METRICS.vac){const c=rows.filter(d=>d[F.vac]>0).length;
+      return `<b>${c}</b> school${c!==1?"s":""}${where} have at least one teacher vacancy (${rows.reduce((s,d)=>s+d[F.vac],0)} posts unfilled in total).`;}
+    return `There are <b>${rows.length}</b> schools${where}.`;
+  }
+
+  // averages
+  if(/average|avg|mean|typical/.test(q) && metric){
+    return `The average ${metric.label}${where} is <b>${fmt(avg(rows.map(d=>d[metric.field])),metric.unit)}</b> (across ${rows.length} schools).`;
+  }
+
+  // totals
+  if(/total|sum|altogether|combined|overall/.test(q) && metric){
+    const t=rows.reduce((s,d)=>s+d[metric.field],0);
+    return `Total ${metric.label}${where}: <b>${t.toLocaleString()}${metric.unit}</b>.`;
+  }
+  if(/total|how many/.test(q) && /student|enrol/.test(q)){
+    const t=rows.reduce((s,d)=>s+d[F.enroll],0);
+    return `<b>${t.toLocaleString()}</b> students are enrolled${where}.`;
+  }
+
+  // list by condition or threshold
+  if(/list|show|name|which schools|what schools|give me/.test(q)){
+    let r=rows, desc="";
+    if(cond){r=rows.filter(cond.test);desc=` with ${cond.label}`;}
+    const thr=parseThreshold(q);
+    if(metric && thr){r=r.filter(d=>thr.op==="gt"?d[metric.field]>thr.n:d[metric.field]<thr.n);
+      desc+=` with ${metric.label} ${thr.op==="gt"?"above":"below"} ${thr.n}${metric.unit}`;}
+    if(!r.length) return `No schools${where}${desc} in the data.`;
+    const show=r.slice(0,12);
+    const valFn = metric? (d=>fmt(d[metric.field],metric.unit)) : (d=>d[F.infra]);
+    return `<b>${r.length} school${r.length!==1?"s":""}${where}${desc}:</b>`+listItems(show,valFn)
+      +(r.length>12?`<div style="margin-top:6px;color:var(--muted)">…and ${r.length-12} more.</div>`:"");
+  }
+
+  // bare condition ("schools with no toilet")
+  if(cond){const r=rows.filter(cond.test);
+    const show=r.slice(0,12);
+    return `<b>${r.length} school${r.length!==1?"s":""}${where} have ${cond.label}:</b>`+listItems(show,d=>`att ${d[F.att]}%`)
+      +(r.length>12?`<div style="margin-top:6px;color:var(--muted)">…and ${r.length-12} more.</div>`:"");
+  }
+
+  // bare metric + block -> average
+  if(metric){
+    return `Average ${metric.label}${where}: <b>${fmt(avg(rows.map(d=>d[metric.field])),metric.unit)}</b>. Ask for "highest", "by block", or "list schools with…" for more.`;
+  }
+
+  return `I couldn't quite parse that. I can answer things like:<br>• "How many schools have no electricity?"<br>• "Average pass rate in ${BLOCKS[0]}"<br>• "Which block has the most vacancies?"<br>• "Top 5 schools by dropout"<br>• "Which schools need attention?"`;
+}
+function parseThreshold(q){
+  let m=q.match(/(above|over|more than|greater than|higher than|>=?|at least)\s*([0-9]+(?:\.[0-9]+)?)/);
+  if(m)return{op:"gt",n:+m[2]};
+  m=q.match(/(below|under|less than|lower than|<=?|at most|fewer than)\s*([0-9]+(?:\.[0-9]+)?)/);
+  if(m)return{op:"lt",n:+m[2]};
+  return null;
+}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function schoolProfile(d){
+  const miss=[F.toilet,F.water,F.elec,F.lib].filter(k=>d[k]==="No")
+    .map(k=>({[F.toilet]:"toilet",[F.water]:"drinking water",[F.elec]:"electricity",[F.lib]:"library/lab"}[k]));
+  return `<b>${d[F.name]}</b> (${d[F.id]}, ${d[F.block]} block, ${d[F.type]})`+
+    `<ul class="ans-list">`+
+    `<li><span>Enrollment</span><span>${d[F.enroll]}</span></li>`+
+    `<li><span>Attendance</span><span>${d[F.att]}%</span></li>`+
+    `<li><span>Pass rate</span><span>${d[F.pass]}%</span></li>`+
+    `<li><span>Dropout</span><span>${d[F.drop]}%</span></li>`+
+    `<li><span>Teacher vacancies</span><span>${d[F.vac]} of ${d[F.sanc]}</span></li>`+
+    `<li><span>Infrastructure</span><span>${d[F.infra]}</span></li>`+
+    `</ul>`+
+    (miss.length?`<div style="margin-top:6px" class="miss">Missing: ${miss.join(", ")}.</div>`:"")+
+    (needsAttention(d)?`<div style="margin-top:4px;color:var(--warn)">Flagged for follow-up.</div>`:"");
+}
+
+/* ---- chat: Claude-powered (sample capability), local data engine as fallback ---- */
+const log=document.getElementById("log"), askInput=document.getElementById("askInput");
+function addMsg(html,who){const m=document.createElement("div");m.className="msg "+who;m.innerHTML=html;log.appendChild(m);log.scrollTop=log.scrollHeight;return m;}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function md(t){return esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/`([^`]+)`/g,"<code>$1</code>").replace(/^\s*[-*•]\s+/gm,"• ").replace(/\n/g,"<br>");}
+
+// compact dataset text to ground the model
+const DATA_TEXT = "id|name|block|type|enroll|attendance%|sanctioned|inPosition|vacancies|pass%|dropout%|infra|toilet|water|electricity|library\n"
+  + DATA.map(d=>[d[F.id],d[F.name],d[F.block],d[F.type],d[F.enroll],d[F.att],d[F.sanc],d[F.inpos],d[F.vac],d[F.pass],d[F.drop],d[F.infra],d[F.toilet],d[F.water],d[F.elec],d[F.lib]].join("|")).join("\n");
+const PREAMBLE = "You are a helpful assistant embedded in a District School Monitoring dashboard used by government education officers. "
+  + "Below is the full dataset of "+DATA.length+" schools as a pipe-delimited table. When the user asks about the schools, compute the answer from this data and be accurate and concise. "
+  + "You can also answer general questions on any topic, like a normal chat. Use plain language and keep answers reasonably short unless more detail is asked for.\n\nDATASET:\n"+DATA_TEXT;
+
+let _sample;
+function getSample(){
+  if(_sample!==undefined) return _sample;
+  _sample = (window.claude && window.claude.use) ? Promise.resolve(window.claude.use("sample")).catch(()=>null) : Promise.resolve(null);
+  return _sample;
+}
+const history=[];
+
+async function ask(q){
+  q=(q||"").trim(); if(!q) return;
+  addMsg(esc(q),"user"); askInput.value="";
+  const sample = await getSample();
+  if(!sample){ addMsg(answer(q),"bot"); return; }   // fallback: local data engine
+  const bubble=addMsg("<span style='opacity:.55'>Thinking…</span>","bot");
+  const turns=[{role:"user",content:PREAMBLE},
+               {role:"assistant",content:"Ready — ask me about the schools or anything else."},
+               ...history,{role:"user",content:q}];
+  try{
+    const res=await sample(turns,{cache:false,onText:({text})=>{bubble.innerHTML=md(text);log.scrollTop=log.scrollHeight;}});
+    const finalText=(res&&res.text)||bubble.textContent||"";
+    bubble.innerHTML=md(finalText);
+    history.push({role:"user",content:q},{role:"assistant",content:finalText});
+    if(history.length>16) history.splice(0,history.length-16);
+  }catch(e){
+    const code=e&&e.code;
+    const tail="<br><br><span style='color:var(--muted)'>Answering from the data directly:</span><br>"+answer(q);
+    if(code==="not_granted") bubble.innerHTML="I need permission to use Claude for this."+tail;
+    else if(code==="rate_limited") bubble.innerHTML="Claude is busy right now."+tail;
+    else bubble.innerHTML="I couldn't reach Claude just now."+tail;
+    log.scrollTop=log.scrollHeight;
+  }
+}
+document.getElementById("askBtn").onclick=()=>ask(askInput.value);
+askInput.addEventListener("keydown",e=>{if(e.key==="Enter")ask(askInput.value);});
+
+const SUGGEST=[
+  "Which schools need attention?",
+  "Average attendance by block",
+  "Which block has the most vacancies?",
+  "How many schools have no toilet?",
+  "Top 5 schools by dropout",
+  "Tell me about S001"
+];
+const sc=document.getElementById("suggest");
+SUGGEST.forEach(s=>{const b=document.createElement("button");b.className="chip";b.textContent=s;b.onclick=()=>ask(s);sc.appendChild(b);});
+addMsg(`Hi! Ask me anything — about these ${DATA.length} schools or any other topic. Tap a suggestion or type your question below.`,"bot");
+
+/* ---------- theme toggle ---------- */
+const root=document.documentElement;
+try{const saved=localStorage.getItem("sm-theme"); if(saved)root.setAttribute("data-theme",saved);}catch(e){}
+document.getElementById("themeToggle").onclick=()=>{
+  const cur=root.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+  const next=cur==="dark"?"light":"dark";
+  root.setAttribute("data-theme",next);
+  try{localStorage.setItem("sm-theme",next);}catch(e){}
+  buildCharts(filtered());
+};
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{if(!root.getAttribute("data-theme"))buildCharts(filtered());});
+
+/* ---------- go ---------- */
+render();
+</script>
+</body>
+</html>
